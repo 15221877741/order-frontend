@@ -5,7 +5,31 @@
         <el-card shadow="never">
           <div class="stat-item">
             <div class="stat-label">全部订单</div>
-            <div class="stat-value" style="color: #1890ff">{{ total }}</div>
+            <div class="stat-value" style="color: #1890ff">{{ stats.total }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="never">
+          <div class="stat-item">
+            <div class="stat-label">待处理</div>
+            <div class="stat-value" style="color: #faad14">{{ stats.pending }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="never">
+          <div class="stat-item">
+            <div class="stat-label">已完成</div>
+            <div class="stat-value" style="color: #52c41a">{{ stats.completed }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="never">
+          <div class="stat-item">
+            <div class="stat-label">已取消</div>
+            <div class="stat-value" style="color: #f5222d">{{ stats.cancelled }}</div>
           </div>
         </el-card>
       </el-col>
@@ -126,6 +150,7 @@ const activeTab = ref('')
 const page = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const stats = ref({ total: 0, pending: 0, completed: 0, cancelled: 0 })
 
 const statusMap = { 0: '待处理', 1: '已完成', 2: '已取消' }
 const statusText = (status) => statusMap[status] || '未知'
@@ -147,21 +172,35 @@ const onSelectionChange = (rows) => {
   selectedIds.value = rows.map(r => r.id)
 }
 
+const loadStats = async () => {
+  try {
+    const res = await orderApi.getMyOrderStats()
+    if (res.data.code === 200 && res.data.data) {
+      stats.value = res.data.data
+    }
+  } catch (e) {
+    // stats 加载失败不影响主列表
+  }
+}
+
 const loadOrders = async () => {
   loading.value = true
   error.value = ''
   selectedIds.value = []
   try {
-    const res = await orderApi.getMyOrders({
-      page: page.value,
-      size: pageSize.value,
-      status: activeTab.value || undefined
-    })
-    if (res.data.code === 200 && res.data.data) {
-      orders.value = res.data.data.list || []
-      total.value = res.data.data.total || 0
+    const [ordersRes] = await Promise.all([
+      orderApi.getMyOrders({
+        page: page.value,
+        size: pageSize.value,
+        status: activeTab.value || undefined
+      }),
+      loadStats()
+    ])
+    if (ordersRes.data.code === 200 && ordersRes.data.data) {
+      orders.value = ordersRes.data.data.list || []
+      total.value = ordersRes.data.data.total || 0
     } else {
-      throw new Error(res.data.message || '加载订单失败')
+      throw new Error(ordersRes.data.message || '加载订单失败')
     }
   } catch (e) {
     error.value = e.response?.data?.message || e.message || '加载订单失败'

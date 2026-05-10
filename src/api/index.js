@@ -41,6 +41,7 @@ export const orderApi = {
   create: (data) => api.post('/orders', data),
   get: (id) => api.get(`/orders/${id}`),
   getMyOrders: (params) => api.get('/orders/user/me', { params }),
+  getMyOrderStats: () => api.get('/orders/user/me/stats'),
   updateStatus: (id, status) => api.put(`/orders/${id}/status?status=${status}`),
   deleteOrder: (id) => api.delete(`/orders/${id}`),
   batchDelete: (ids) => api.post('/orders/batch-delete', { ids })
