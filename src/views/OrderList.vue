@@ -65,9 +65,20 @@
       </template>
 
       <template v-else>
+        <div style="overflow-x: auto">
         <el-table :data="filteredOrders" style="width: 100%" @selection-change="onSelectionChange">
           <el-table-column type="selection" width="50" :selectable="(row) => row.status === 2" />
-          <el-table-column prop="orderNo" label="订单号" width="200" show-overflow-tooltip />
+          <el-table-column prop="orderNo" label="订单号" width="160" show-overflow-tooltip />
+          <el-table-column label="商品名称" min-width="150" show-overflow-tooltip>
+            <template #default="{ row }">
+              {{ row.productNames || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="商品数量" width="80">
+            <template #default="{ row }">
+              {{ row.totalQuantity ?? '-' }}
+            </template>
+          </el-table-column>
           <el-table-column prop="totalAmount" label="金额" width="120">
             <template #default="{ row }">
               <span style="color: #f5222d; font-weight: bold">¥{{ row.totalAmount }}</span>
@@ -95,8 +106,9 @@
                 </template>
               </el-popconfirm>
             </template>
-          </el-table-column>
-        </el-table>
+            </el-table-column>
+          </el-table>
+        </div>
 
         <div v-if="selectedIds.length > 0" class="batch-bar">
           <el-popconfirm title="确定要批量删除选中的订单吗？" @confirm="batchDeleteOrders">
