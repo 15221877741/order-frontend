@@ -5,31 +5,7 @@
         <el-card shadow="never">
           <div class="stat-item">
             <div class="stat-label">全部订单</div>
-            <div class="stat-value" style="color: #1890ff">{{ allCount }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never">
-          <div class="stat-item">
-            <div class="stat-label">待处理</div>
-            <div class="stat-value" style="color: #faad14">{{ pendingCount }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never">
-          <div class="stat-item">
-            <div class="stat-label">已完成</div>
-            <div class="stat-value" style="color: #52c41a">{{ completedCount }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never">
-          <div class="stat-item">
-            <div class="stat-label">已取消</div>
-            <div class="stat-value" style="color: #f5222d">{{ cancelledCount }}</div>
+            <div class="stat-value" style="color: #1890ff">{{ total }}</div>
           </div>
         </el-card>
       </el-col>
@@ -39,7 +15,7 @@
       <template #header>
         <div class="card-header">
           <el-tabs v-model="activeTab" class="order-tabs" @tab-change="handleTabChange">
-            <el-tab-pane label="全部" name="all" />
+            <el-tab-pane label="全部" name="" />
             <el-tab-pane label="待处理" name="0" />
             <el-tab-pane label="已完成" name="1" />
             <el-tab-pane label="已取消" name="2" />
@@ -60,13 +36,13 @@
         </el-result>
       </div>
 
-      <template v-else-if="filteredOrders.length === 0">
+      <template v-else-if="orders.length === 0">
         <el-empty description="暂无订单" />
       </template>
 
       <template v-else>
         <div style="overflow-x: auto">
-        <el-table :data="filteredOrders" style="width: 100%" @selection-change="onSelectionChange">
+        <el-table :data="orders" style="width: 100%" @selection-change="onSelectionChange">
           <el-table-column type="selection" width="50" :selectable="(row) => row.status === 2" />
           <el-table-column prop="orderNo" label="订单号" width="160" show-overflow-tooltip />
           <el-table-column label="商品名称" min-width="150" show-overflow-tooltip>
@@ -110,14 +86,26 @@
           </el-table>
         </div>
 
-        <div v-if="selectedIds.length > 0" class="batch-bar">
-          <el-popconfirm title="确定要批量删除选中的订单吗？" @confirm="batchDeleteOrders">
-            <template #reference>
-              <el-button type="danger" size="small">
-                批量删除 ({{ selectedIds.length }})
-              </el-button>
-            </template>
-          </el-popconfirm>
+        <div class="pagination-bar">
+          <div v-if="selectedIds.length > 0">
+            <el-popconfirm title="确定要批量删除选中的订单吗？" @confirm="batchDeleteOrders">
+              <template #reference>
+                <el-button type="danger" size="small">
+                  批量删除 ({{ selectedIds.length }})
+                </el-button>
+              </template>
+            </el-popconfirm>
+          </div>
+          <el-pagination
+            v-if="total > 0"
+            v-model:current-page="page"
+            v-model:page-size="pageSize"
+            :total="total"
+            :page-sizes="[5, 10, 20, 50]"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="loadOrders"
+            @current-change="loadOrders"
+          />
         </div>
       </template>
     </el-card>
@@ -125,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { orderApi } from '@/api'
 import { ElMessage } from 'element-plus'
@@ -134,7 +122,10 @@ const orders = ref([])
 const selectedIds = ref([])
 const loading = ref(false)
 const error = ref('')
-const activeTab = ref('all')
+const activeTab = ref('')
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const statusMap = { 0: '待处理', 1: '已完成', 2: '已取消' }
 const statusText = (status) => statusMap[status] || '未知'
@@ -147,17 +138,10 @@ const statusType = (status) => {
 
 const formatTime = (time) => time ? new Date(time).toLocaleString() : '-'
 
-const allCount = computed(() => orders.value.length)
-const pendingCount = computed(() => orders.value.filter(o => o.status === 0).length)
-const completedCount = computed(() => orders.value.filter(o => o.status === 1).length)
-const cancelledCount = computed(() => orders.value.filter(o => o.status === 2).length)
-
-const filteredOrders = computed(() => {
-  if (activeTab.value === 'all') return orders.value
-  return orders.value.filter(o => o.status === Number(activeTab.value))
-})
-
-const handleTabChange = () => {}
+const handleTabChange = () => {
+  page.value = 1
+  loadOrders()
+}
 
 const onSelectionChange = (rows) => {
   selectedIds.value = rows.map(r => r.id)
@@ -168,8 +152,17 @@ const loadOrders = async () => {
   error.value = ''
   selectedIds.value = []
   try {
-    const res = await orderApi.getMyOrders()
-    orders.value = res.data.data
+    const res = await orderApi.getMyOrders({
+      page: page.value,
+      size: pageSize.value,
+      status: activeTab.value || undefined
+    })
+    if (res.data.code === 200 && res.data.data) {
+      orders.value = res.data.data.list || []
+      total.value = res.data.data.total || 0
+    } else {
+      throw new Error(res.data.message || '加载订单失败')
+    }
   } catch (e) {
     error.value = e.response?.data?.message || e.message || '加载订单失败'
   } finally {
@@ -232,7 +225,18 @@ onMounted(loadOrders)
   font-size: 28px;
   font-weight: bold;
 }
-.batch-bar {
+.pagination-bar {
   margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+:deep(.el-checkbox__inner) {
+  background-color: #fff;
+  border-color: #409eff;
+}
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #409eff;
+  border-color: #409eff;
 }
 </style>
