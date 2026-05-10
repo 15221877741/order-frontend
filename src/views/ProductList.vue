@@ -33,11 +33,10 @@ const loadProducts = async () => {
   error.value = ''
   try {
     const res = await productApi.list()
-    console.log('加载商品数据:', res.data)
-    products.value = res.data
+    products.value = res.data.data
     products.value.forEach(p => { quantities.value[p.id] = 1 })
   } catch (e) {
-    error.value = '加载商品失败: ' + e.message
+    error.value = '加载商品失败: ' + (e.response?.data?.message || e.message)
   } finally {
     loading.value = false
   }
@@ -54,7 +53,7 @@ const buyProduct = async (product) => {
     alert('下单成功!')
     loadProducts()
   } catch (e) {
-    alert('下单失败: ' + e.message)
+    alert('下单失败: ' + (e.response?.data?.message || e.message))
   }
 }
 

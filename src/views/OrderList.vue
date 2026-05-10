@@ -74,9 +74,9 @@ const loadOrders = async () => {
   selectedIds.value = []
   try {
     const res = await orderApi.getByUser(store.userId)
-    orders.value = res.data
+    orders.value = res.data.data
   } catch (e) {
-    error.value = '加载订单失败: ' + e.message
+    error.value = '加载订单失败: ' + (e.response?.data?.message || e.message)
   } finally {
     loading.value = false
   }
@@ -87,7 +87,7 @@ const updateStatus = async (id, status) => {
     await orderApi.updateStatus(id, status)
     loadOrders()
   } catch (e) {
-    alert('操作失败: ' + e.message)
+    alert('操作失败: ' + (e.response?.data?.message || e.message))
   }
 }
 
@@ -97,7 +97,7 @@ const deleteSingleOrder = async (id) => {
       await orderApi.deleteOrder(id, store.userId)
       loadOrders()
     } catch (e) {
-      alert('删除失败: ' + e.message)
+      alert('删除失败: ' + (e.response?.data?.message || e.message))
     }
   }
 }
@@ -105,10 +105,15 @@ const deleteSingleOrder = async (id) => {
 const batchDeleteOrders = async () => {
   if (confirm(`确定要删除选中的 ${selectedIds.value.length} 个订单吗？`)) {
     try {
-      await orderApi.batchDelete(selectedIds.value, store.userId)
+      let rs = await orderApi.batchDelete(selectedIds.value, store.userId)
+      if (rs.data.code === 200) {
+        alert('批量删除成功!')
+      } else {
+        alert('批量删除失败: ' + rs.data.message)
+      }
       loadOrders()
     } catch (e) {
-      alert('批量删除失败: ' + e.message)
+      alert('批量删除失败: ' + (e.response?.data?.message || e.message))
     }
   }
 }
