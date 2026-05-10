@@ -19,7 +19,7 @@
           </thead>
           <tbody>
             <tr v-for="order in orders" :key="order.id">
-              <td><input type="checkbox" :value="order.id" v-model="selectedIds" /></td>
+              <td><input v-if="order.status === 2" type="checkbox" :value="order.id" v-model="selectedIds" /></td>
               <td>{{ order.orderNo }}</td>
               <td>¥{{ order.totalAmount }}</td>
               <td><span :class="'status-' + order.status">{{ statusText(order.status) }}</span></td>
@@ -57,14 +57,15 @@ const statusText = (status) => ['待处理', '已完成', '已取消'][status] |
 const formatTime = (time) => time ? new Date(time).toLocaleString() : '-'
 
 const isAllSelected = computed(() => {
-  return orders.value.length > 0 && selectedIds.value.length === orders.value.length
+  const cancelOrders = orders.value.filter(o => o.status === 2)
+  return cancelOrders.length > 0 && selectedIds.value.length === cancelOrders.length
 })
 
 const toggleSelectAll = () => {
   if (isAllSelected.value) {
     selectedIds.value = []
   } else {
-    selectedIds.value = orders.value.map(o => o.id)
+    selectedIds.value = orders.value.filter(o => o.status === 2).map(o => o.id)
   }
 }
 
