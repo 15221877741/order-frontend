@@ -1,32 +1,72 @@
 <template>
   <div class="product-list">
-    <h2>商品列表</h2>
-    <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else class="product-grid">
-      <div v-for="product in products" :key="product.id" class="product-card">
-        <h3>{{ product.name }}</h3>
-        <p class="price">¥{{ product.price }}</p>
-        <p class="stock">库存: {{ product.stock }}</p>
-        <div class="action">
-          <input v-model="quantities[product.id]" type="number" min="1" value="1" />
-          <button @click="buyProduct(product)" :disabled="product.stock === 0">购买</button>
-        </div>
-      </div>
+    <el-card shadow="never" class="search-bar">
+      <el-row :gutter="16" align="middle">
+        <el-col :span="8">
+          <el-input v-model="searchQuery" placeholder="搜索商品名称" clearable :prefix-icon="Search" @input="handleSearch" />
+        </el-col>
+        <el-col :span="4">
+          <el-button type="primary" :icon="Search" @click="loadProducts">搜索</el-button>
+        </el-col>
+      </el-row>
+    </el-card>
+
+    <div v-if="loading" class="loading-container">
+      <el-skeleton :rows="3" animated />
     </div>
+
+    <div v-else-if="error" class="error-container">
+      <el-result icon="error" title="加载失败" :sub-title="error">
+        <template #extra>
+          <el-button type="primary" @click="loadProducts">重新加载</el-button>
+        </template>
+      </el-result>
+    </div>
+
+    <div v-else-if="filteredProducts.length === 0" class="error-container">
+      <el-empty description="暂无商品" />
+    </div>
+
+    <el-row v-else :gutter="20">
+      <el-col v-for="product in filteredProducts" :key="product.id" :xs="24" :sm="12" :md="8" :lg="6" style="margin-bottom: 20px">
+        <el-card shadow="hover" class="product-card">
+          <div class="product-img">
+            <el-icon :size="48"><Goods /></el-icon>
+          </div>
+          <h3 class="product-name">{{ product.name }}</h3>
+          <div class="product-meta">
+            <span class="product-price">¥{{ product.price }}</span>
+            <span class="product-stock">库存: {{ product.stock }}</span>
+          </div>
+          <div class="product-action">
+            <el-input-number v-model="quantities[product.id]" :min="1" :max="product.stock" size="small" />
+            <el-button type="danger" size="small" :disabled="product.stock === 0" :icon="ShoppingCart" @click="buyProduct(product)">
+              购买
+            </el-button>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { Search, Goods, ShoppingCart } from '@element-plus/icons-vue'
 import { productApi, orderApi } from '@/api'
-import { useOrderStore } from '@/store'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
-const store = useOrderStore()
 const products = ref([])
 const quantities = ref({})
 const loading = ref(false)
 const error = ref('')
+const searchQuery = ref('')
+
+const filteredProducts = computed(() => {
+  if (!searchQuery.value) return products.value
+  const q = searchQuery.value.toLowerCase()
+  return products.value.filter(p => p.name.toLowerCase().includes(q))
+})
 
 const loadProducts = async () => {
   loading.value = true
@@ -36,24 +76,33 @@ const loadProducts = async () => {
     products.value = res.data.data
     products.value.forEach(p => { quantities.value[p.id] = 1 })
   } catch (e) {
-    error.value = '加载商品失败: ' + (e.response?.data?.message || e.message)
+    error.value = e.response?.data?.message || e.message || '加载商品失败'
   } finally {
     loading.value = false
   }
 }
 
+const handleSearch = () => {
+}
+
 const buyProduct = async (product) => {
   const qty = quantities.value[product.id] || 1
   try {
+    await ElMessageBox.confirm(
+      `确定购买「${product.name}」x ${qty}，合计 ¥${(product.price * qty).toFixed(2)}？`,
+      '确认下单',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'info' }
+    )
     await orderApi.create({
-      userId: store.userId,
       productIds: [product.id],
       quantities: [qty]
     })
-    alert('下单成功!')
+    ElMessage.success('下单成功!')
     loadProducts()
   } catch (e) {
-    alert('下单失败: ' + (e.response?.data?.message || e.message))
+    if (e !== 'cancel') {
+      ElMessage.error(e.response?.data?.message || e.message || '下单失败')
+    }
   }
 }
 
@@ -61,15 +110,51 @@ onMounted(loadProducts)
 </script>
 
 <style scoped>
-.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
-.product-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-.product-card h3 { margin-bottom: 10px; }
-.price { color: #f5222d; font-size: 20px; font-weight: bold; }
-.stock { color: #888; margin: 10px 0; }
-.action { display: flex; gap: 10px; }
-.action input { width: 60px; padding: 4px; }
-.action button { flex: 1; background: #1890ff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; }
-.action button:disabled { background: #ccc; }
-.loading, .error { text-align: center; padding: 40px; }
-.error { color: #f5222d; }
+.search-bar {
+  margin-bottom: 20px;
+}
+.loading-container, .error-container {
+  margin-top: 40px;
+}
+.product-card {
+  text-align: center;
+  transition: transform 0.2s;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+}
+.product-img {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #409eff;
+  margin-bottom: 12px;
+}
+.product-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 8px;
+}
+.product-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.product-price {
+  color: #f5222d;
+  font-size: 20px;
+  font-weight: bold;
+}
+.product-stock {
+  color: #909399;
+  font-size: 13px;
+}
+.product-action {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
 </style>

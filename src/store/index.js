@@ -1,9 +1,27 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
-export const useOrderStore = defineStore('order', () => {
-  const userId = ref(1)
-  const setUserId = (id) => { userId.value = id }
+export const useAuthStore = defineStore('auth', () => {
+  const token = ref(localStorage.getItem('token') || '')
+  const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
 
-  return { userId, setUserId }
+  const isLoggedIn = computed(() => !!token.value)
+  const userId = computed(() => user.value?.userId || null)
+  const nickname = computed(() => user.value?.nickname || '')
+
+  const setAuth = (t, u) => {
+    token.value = t
+    user.value = u
+    localStorage.setItem('token', t)
+    localStorage.setItem('user', JSON.stringify(u))
+  }
+
+  const logout = () => {
+    token.value = ''
+    user.value = null
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+  }
+
+  return { token, user, isLoggedIn, userId, nickname, setAuth, logout }
 })

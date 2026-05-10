@@ -1,72 +1,154 @@
 <template>
   <div class="order-list">
-    <h2>我的订单</h2>
-    <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="orders.length === 0" class="empty">暂无订单</div>
-    <div v-else>
-      <div class="order-table">
-        <table>
-          <thead>
-            <tr>
-              <th><input type="checkbox" @change="toggleSelectAll" :checked="isAllSelected" /></th>
-              <th>订单号</th>
-              <th>金额</th>
-              <th>状态</th>
-              <th>时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="order in orders" :key="order.id">
-              <td><input v-if="order.status === 2" type="checkbox" :value="order.id" v-model="selectedIds" /></td>
-              <td>{{ order.orderNo }}</td>
-              <td>¥{{ order.totalAmount }}</td>
-              <td><span :class="'status-' + order.status">{{ statusText(order.status) }}</span></td>
-              <td>{{ formatTime(order.createTime) }}</td>
-              <td>
-                <button v-if="order.status === 0" @click="updateStatus(order.id, 1)" class="btn-complete">完成</button>
-                <button v-if="order.status === 0" @click="updateStatus(order.id, 2)" class="btn-cancel">取消</button>
-                <button v-if="order.status === 2" @click="deleteSingleOrder(order.id)" class="btn-delete">删除</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <el-row :gutter="16" style="margin-bottom: 20px">
+      <el-col :span="6">
+        <el-card shadow="never">
+          <div class="stat-item">
+            <div class="stat-label">全部订单</div>
+            <div class="stat-value" style="color: #1890ff">{{ allCount }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="never">
+          <div class="stat-item">
+            <div class="stat-label">待处理</div>
+            <div class="stat-value" style="color: #faad14">{{ pendingCount }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="never">
+          <div class="stat-item">
+            <div class="stat-label">已完成</div>
+            <div class="stat-value" style="color: #52c41a">{{ completedCount }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="never">
+          <div class="stat-item">
+            <div class="stat-label">已取消</div>
+            <div class="stat-value" style="color: #f5222d">{{ cancelledCount }}</div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-card shadow="never">
+      <template #header>
+        <div class="card-header">
+          <el-tabs v-model="activeTab" class="order-tabs" @tab-change="handleTabChange">
+            <el-tab-pane label="全部" name="all" />
+            <el-tab-pane label="待处理" name="0" />
+            <el-tab-pane label="已完成" name="1" />
+            <el-tab-pane label="已取消" name="2" />
+          </el-tabs>
+          <el-button :icon="Refresh" @click="loadOrders">刷新</el-button>
+        </div>
+      </template>
+
+      <div v-if="loading" style="padding: 40px; text-align: center">
+        <el-skeleton :rows="5" animated />
       </div>
-      <div class="batch-actions">
-        <button v-if="selectedIds.length > 0" @click="batchDeleteOrders" class="btn-batch-delete">批量删除 ({{ selectedIds.length }})</button>
-        <button @click="loadOrders" class="refresh-btn">刷新</button>
+
+      <div v-else-if="error" style="padding: 40px; text-align: center">
+        <el-result icon="error" title="加载失败" :sub-title="error">
+          <template #extra>
+            <el-button type="primary" @click="loadOrders">重新加载</el-button>
+          </template>
+        </el-result>
       </div>
-    </div>
+
+      <template v-else-if="filteredOrders.length === 0">
+        <el-empty description="暂无订单" />
+      </template>
+
+      <template v-else>
+        <el-table :data="filteredOrders" style="width: 100%" @selection-change="onSelectionChange">
+          <el-table-column type="selection" width="50" :selectable="(row) => row.status === 2" />
+          <el-table-column prop="orderNo" label="订单号" width="200" show-overflow-tooltip />
+          <el-table-column prop="totalAmount" label="金额" width="120">
+            <template #default="{ row }">
+              <span style="color: #f5222d; font-weight: bold">¥{{ row.totalAmount }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="status" label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="statusType(row.status)" size="small">
+                {{ statusText(row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="下单时间" width="180">
+            <template #default="{ row }">
+              {{ formatTime(row.createTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" min-width="200">
+            <template #default="{ row }">
+              <el-button v-if="row.status === 0" type="success" size="small" @click="updateStatus(row.id, 1)">完成</el-button>
+              <el-button v-if="row.status === 0" type="warning" size="small" @click="updateStatus(row.id, 2)">取消</el-button>
+              <el-popconfirm v-if="row.status === 2" title="确定要删除该订单吗？" @confirm="deleteSingleOrder(row.id)">
+                <template #reference>
+                  <el-button type="danger" size="small">删除</el-button>
+                </template>
+              </el-popconfirm>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div v-if="selectedIds.length > 0" class="batch-bar">
+          <el-popconfirm title="确定要批量删除选中的订单吗？" @confirm="batchDeleteOrders">
+            <template #reference>
+              <el-button type="danger" size="small">
+                批量删除 ({{ selectedIds.length }})
+              </el-button>
+            </template>
+          </el-popconfirm>
+        </div>
+      </template>
+    </el-card>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { Refresh } from '@element-plus/icons-vue'
 import { orderApi } from '@/api'
-import { useOrderStore } from '@/store'
+import { ElMessage } from 'element-plus'
 
-const store = useOrderStore()
 const orders = ref([])
 const selectedIds = ref([])
 const loading = ref(false)
 const error = ref('')
+const activeTab = ref('all')
 
-const statusText = (status) => ['待处理', '已完成', '已取消'][status] || '未知'
+const statusMap = { 0: '待处理', 1: '已完成', 2: '已取消' }
+const statusText = (status) => statusMap[status] || '未知'
+const statusType = (status) => {
+  if (status === 0) return 'warning'
+  if (status === 1) return 'success'
+  if (status === 2) return 'danger'
+  return 'info'
+}
 
 const formatTime = (time) => time ? new Date(time).toLocaleString() : '-'
 
-const isAllSelected = computed(() => {
-  const cancelOrders = orders.value.filter(o => o.status === 2)
-  return cancelOrders.length > 0 && selectedIds.value.length === cancelOrders.length
+const allCount = computed(() => orders.value.length)
+const pendingCount = computed(() => orders.value.filter(o => o.status === 0).length)
+const completedCount = computed(() => orders.value.filter(o => o.status === 1).length)
+const cancelledCount = computed(() => orders.value.filter(o => o.status === 2).length)
+
+const filteredOrders = computed(() => {
+  if (activeTab.value === 'all') return orders.value
+  return orders.value.filter(o => o.status === Number(activeTab.value))
 })
 
-const toggleSelectAll = () => {
-  if (isAllSelected.value) {
-    selectedIds.value = []
-  } else {
-    selectedIds.value = orders.value.filter(o => o.status === 2).map(o => o.id)
-  }
+const handleTabChange = () => {}
+
+const onSelectionChange = (rows) => {
+  selectedIds.value = rows.map(r => r.id)
 }
 
 const loadOrders = async () => {
@@ -74,10 +156,10 @@ const loadOrders = async () => {
   error.value = ''
   selectedIds.value = []
   try {
-    const res = await orderApi.getByUser(store.userId)
+    const res = await orderApi.getMyOrders()
     orders.value = res.data.data
   } catch (e) {
-    error.value = '加载订单失败: ' + (e.response?.data?.message || e.message)
+    error.value = e.response?.data?.message || e.message || '加载订单失败'
   } finally {
     loading.value = false
   }
@@ -86,36 +168,30 @@ const loadOrders = async () => {
 const updateStatus = async (id, status) => {
   try {
     await orderApi.updateStatus(id, status)
+    ElMessage.success('操作成功')
     loadOrders()
   } catch (e) {
-    alert('操作失败: ' + (e.response?.data?.message || e.message))
+    ElMessage.error(e.response?.data?.message || e.message || '操作失败')
   }
 }
 
 const deleteSingleOrder = async (id) => {
-  if (confirm('确定要删除该订单吗？')) {
-    try {
-      await orderApi.deleteOrder(id, store.userId)
-      loadOrders()
-    } catch (e) {
-      alert('删除失败: ' + (e.response?.data?.message || e.message))
-    }
+  try {
+    await orderApi.deleteOrder(id)
+    ElMessage.success('删除成功')
+    loadOrders()
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || e.message || '删除失败')
   }
 }
 
 const batchDeleteOrders = async () => {
-  if (confirm(`确定要删除选中的 ${selectedIds.value.length} 个订单吗？`)) {
-    try {
-      let rs = await orderApi.batchDelete(selectedIds.value, store.userId)
-      if (rs.data.code === 200) {
-        alert('批量删除成功!')
-      } else {
-        alert('批量删除失败: ' + rs.data.message)
-      }
-      loadOrders()
-    } catch (e) {
-      alert('批量删除失败: ' + (e.response?.data?.message || e.message))
-    }
+  try {
+    await orderApi.batchDelete(selectedIds.value)
+    ElMessage.success('批量删除成功')
+    loadOrders()
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || e.message || '批量删除失败')
   }
 }
 
@@ -123,20 +199,28 @@ onMounted(loadOrders)
 </script>
 
 <style scoped>
-.order-table { background: white; border-radius: 8px; overflow: hidden; margin-top: 20px; }
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-th { background: #fafafa; font-weight: 500; }
-.status-0 { color: #faad14; }
-.status-1 { color: #52c41a; }
-.status-2 { color: #ff4d4f; }
-.btn-complete, .btn-cancel, .btn-delete { padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; margin-right: 8px; font-size: 12px; }
-.btn-complete { background: #52c41a; color: white; }
-.btn-cancel { background: #ff4d4f; color: white; }
-.btn-delete { background: #888; color: white; }
-.batch-actions { margin-top: 16px; display: flex; gap: 12px; align-items: center; }
-.btn-batch-delete { padding: 8px 16px; background: #ff4d4f; color: white; border: none; border-radius: 4px; cursor: pointer; }
-.refresh-btn { padding: 8px 16px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-.loading, .error, .empty { text-align: center; padding: 40px; }
-.error { color: #f5222d; }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.order-tabs {
+  flex: 1;
+}
+.stat-item {
+  text-align: center;
+  padding: 8px 0;
+}
+.stat-label {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+}
+.batch-bar {
+  margin-top: 16px;
+}
 </style>
