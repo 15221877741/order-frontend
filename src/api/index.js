@@ -12,7 +12,10 @@ export const productApi = {
 export const orderApi = {
   create: (data) => api.post('/orders', data),
   get: (id) => api.get(`/orders/${id}`),
-  getByUser: (userId) => api.get(`/orders/user/${userId}`)
+  getByUser: (userId) => api.get(`/orders/user/${userId}`),
+  updateStatus: (id, status) => api.put(`/orders/${id}/status?status=${status}`),
+  deleteOrder: (id, userId) => api.delete(`/orders/${id}?userId=${userId}`),
+  batchDelete: (ids, userId) => api.post('/orders/batch-delete', { ids, userId })
 }
 
 export default api
