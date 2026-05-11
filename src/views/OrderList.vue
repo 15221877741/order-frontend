@@ -81,13 +81,15 @@
               </el-table-column>
               <el-table-column label="操作" min-width="100">
                 <template #default="{ row }">
-                  <el-button v-if="row.status === 0" type="success" size="small" @click="updateStatus(row.id, 1)">完成</el-button>
-                  <el-button v-if="row.status === 0" type="warning" size="small" @click="updateStatus(row.id, 2)">取消</el-button>
-                  <el-popconfirm v-if="row.status === 2" title="确定要删除该订单吗？" @confirm="deleteSingleOrder(row.id)">
-                    <template #reference>
-                      <el-button type="danger" size="small">删除</el-button>
-                    </template>
-                  </el-popconfirm>
+                  <div class="op-btns">
+                    <el-button v-if="row.status === 0" type="success" size="small" @click="updateStatus(row.id, 1)">完成</el-button>
+                    <el-button v-if="row.status === 0" type="warning" size="small" @click="updateStatus(row.id, 2)">取消</el-button>
+                    <el-popconfirm v-if="row.status === 2" title="确定要删除该订单吗？" @confirm="deleteSingleOrder(row.id)">
+                      <template #reference>
+                        <el-button type="danger" size="small">删除</el-button>
+                      </template>
+                    </el-popconfirm>
+                  </div>
                 </template>
               </el-table-column>
             </el-table>
@@ -297,6 +299,13 @@ onMounted(loadOrders)
   align-items: center;
   justify-content: center;
   padding: 40px;
+}
+.op-btns {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
 }
 .table-scroll {
   flex: 1;
