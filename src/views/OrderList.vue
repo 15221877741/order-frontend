@@ -149,7 +149,7 @@ const loading = ref(false)
 const error = ref('')
 const activeTab = ref('')
 const page = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(5)
 const total = ref(0)
 const stats = ref({ total: 0, pending: 0, completed: 0, cancelled: 0 })
 

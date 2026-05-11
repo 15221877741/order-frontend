@@ -39,7 +39,7 @@
             <span class="product-stock">库存: {{ product.stock }}</span>
           </div>
           <div class="product-action">
-            <el-input-number v-model="quantities[product.id]" :min="1" :max="product.stock" size="small" />
+            <el-input-number v-model="quantities[product.id]" :min="1" :max="Math.max(product.stock, 1)" size="small" />
             <el-button type="danger" size="small" :disabled="product.stock === 0" :icon="ShoppingCart" @click="buyProduct(product)">
               购买
             </el-button>
