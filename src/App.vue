@@ -1,6 +1,6 @@
 <template>
   <router-view v-if="isLoginPage" />
-  <el-container v-else style="min-height: 100vh">
+  <el-container v-else style="height: 100vh; overflow: hidden">
     <el-aside width="220px" class="app-aside">
       <div class="app-logo">
         <el-icon :size="24"><Management /></el-icon>
@@ -116,5 +116,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .app-main {
   background: #f0f2f5;
   padding: 20px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="order-list">
-    <el-row :gutter="16" style="margin-bottom: 20px">
+    <el-row :gutter="16" class="stats-row">
       <el-col :span="6">
         <el-card shadow="never">
           <div class="stat-item">
@@ -35,7 +35,7 @@
       </el-col>
     </el-row>
 
-    <el-card shadow="never">
+    <el-card shadow="never" class="table-card">
       <template #header>
         <div class="card-header">
           <el-tabs v-model="activeTab" class="order-tabs" @tab-change="handleTabChange">
@@ -48,90 +48,94 @@
         </div>
       </template>
 
-      <div v-if="loading" style="padding: 40px; text-align: center">
-        <el-skeleton :rows="5" animated />
-      </div>
+      <div class="table-body">
+        <div v-if="loading" class="table-state">
+          <el-skeleton :rows="5" animated />
+        </div>
 
-      <div v-else-if="error" style="padding: 40px; text-align: center">
-        <el-result icon="error" title="加载失败" :sub-title="error">
-          <template #extra>
-            <el-button type="primary" @click="loadOrders">重新加载</el-button>
-          </template>
-        </el-result>
-      </div>
+        <div v-else-if="error" class="table-state">
+          <el-result icon="error" title="加载失败" :sub-title="error">
+            <template #extra>
+              <el-button type="primary" @click="loadOrders">重新加载</el-button>
+            </template>
+          </el-result>
+        </div>
 
-      <template v-else-if="orders.length === 0">
-        <el-empty description="暂无订单" />
-      </template>
+        <template v-else-if="orders.length === 0">
+          <div class="table-state">
+            <el-empty description="暂无订单" />
+          </div>
+        </template>
 
-      <template v-else>
-        <div style="overflow-x: auto">
-        <el-table :data="orders" style="width: 100%" @selection-change="onSelectionChange">
-          <el-table-column type="selection" width="50" :selectable="(row) => row.status === 2" />
-          <el-table-column prop="orderNo" label="订单号" width="160" show-overflow-tooltip />
-          <el-table-column label="商品名称" min-width="150" show-overflow-tooltip>
-            <template #default="{ row }">
-              {{ row.productNames || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="商品数量" width="80">
-            <template #default="{ row }">
-              {{ row.totalQuantity ?? '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="totalAmount" label="金额" width="120">
-            <template #default="{ row }">
-              <span style="color: #f5222d; font-weight: bold">¥{{ row.totalAmount }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="status" label="状态" width="100">
-            <template #default="{ row }">
-              <el-tag :type="statusType(row.status)" size="small">
-                {{ statusText(row.status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="createTime" label="下单时间" width="180">
-            <template #default="{ row }">
-              {{ formatTime(row.createTime) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" min-width="200">
-            <template #default="{ row }">
-              <el-button v-if="row.status === 0" type="success" size="small" @click="updateStatus(row.id, 1)">完成</el-button>
-              <el-button v-if="row.status === 0" type="warning" size="small" @click="updateStatus(row.id, 2)">取消</el-button>
-              <el-popconfirm v-if="row.status === 2" title="确定要删除该订单吗？" @confirm="deleteSingleOrder(row.id)">
+        <template v-else>
+          <div class="table-scroll">
+            <el-table :data="orders" style="width: 100%" @selection-change="onSelectionChange">
+              <el-table-column type="selection" width="50" :selectable="(row) => row.status === 2" />
+              <el-table-column prop="orderNo" label="订单号" width="160" show-overflow-tooltip />
+              <el-table-column label="商品名称" min-width="150" show-overflow-tooltip>
+                <template #default="{ row }">
+                  {{ row.productNames || '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="商品数量" width="80">
+                <template #default="{ row }">
+                  {{ row.totalQuantity ?? '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="totalAmount" label="金额" width="120">
+                <template #default="{ row }">
+                  <span style="color: #f5222d; font-weight: bold">¥{{ row.totalAmount }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="statusType(row.status)" size="small">
+                    {{ statusText(row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="createTime" label="下单时间" width="180">
+                <template #default="{ row }">
+                  {{ formatTime(row.createTime) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" min-width="200">
+                <template #default="{ row }">
+                  <el-button v-if="row.status === 0" type="success" size="small" @click="updateStatus(row.id, 1)">完成</el-button>
+                  <el-button v-if="row.status === 0" type="warning" size="small" @click="updateStatus(row.id, 2)">取消</el-button>
+                  <el-popconfirm v-if="row.status === 2" title="确定要删除该订单吗？" @confirm="deleteSingleOrder(row.id)">
+                    <template #reference>
+                      <el-button type="danger" size="small">删除</el-button>
+                    </template>
+                  </el-popconfirm>
+                </template>
+                </el-table-column>
+              </el-table>
+            </div>
+
+          <div class="pagination-bar">
+            <div v-if="selectedIds.length > 0">
+              <el-popconfirm title="确定要批量删除选中的订单吗？" @confirm="batchDeleteOrders">
                 <template #reference>
-                  <el-button type="danger" size="small">删除</el-button>
+                  <el-button type="danger" size="small">
+                    批量删除 ({{ selectedIds.length }})
+                  </el-button>
                 </template>
               </el-popconfirm>
-            </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <div class="pagination-bar">
-          <div v-if="selectedIds.length > 0">
-            <el-popconfirm title="确定要批量删除选中的订单吗？" @confirm="batchDeleteOrders">
-              <template #reference>
-                <el-button type="danger" size="small">
-                  批量删除 ({{ selectedIds.length }})
-                </el-button>
-              </template>
-            </el-popconfirm>
+            </div>
+            <el-pagination
+              v-if="total > 0"
+              v-model:current-page="page"
+              v-model:page-size="pageSize"
+              :total="total"
+              :page-sizes="[5, 10, 20, 50]"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="loadOrders"
+              @current-change="loadOrders"
+            />
           </div>
-          <el-pagination
-            v-if="total > 0"
-            v-model:current-page="page"
-            v-model:page-size="pageSize"
-            :total="total"
-            :page-sizes="[5, 10, 20, 50]"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="loadOrders"
-            @current-change="loadOrders"
-          />
-        </div>
-      </template>
+        </template>
+      </div>
     </el-card>
   </div>
 </template>
@@ -184,8 +188,8 @@ const loadStats = async () => {
 }
 
 const loadOrders = async () => {
-  const mainEl = document.querySelector('.app-main')
-  const savedScroll = mainEl?.scrollTop || 0
+  const scrollEl = document.querySelector('.table-scroll')
+  const savedScroll = scrollEl?.scrollTop || 0
   loading.value = true
   error.value = ''
   selectedIds.value = []
@@ -208,7 +212,7 @@ const loadOrders = async () => {
     error.value = e.response?.data?.message || e.message || '加载订单失败'
   } finally {
     loading.value = false
-    nextTick(() => mainEl?.scrollTo({ top: savedScroll }))
+    nextTick(() => scrollEl?.scrollTo({ top: savedScroll }))
   }
 }
 
@@ -260,21 +264,61 @@ onMounted(loadOrders)
 .order-tabs {
   flex: 1;
 }
+.stats-row {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
 .stat-item {
   text-align: center;
-  padding: 8px 0;
+  padding: 4px 0;
 }
 .stat-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #909399;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 .stat-value {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: bold;
 }
+.order-list {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.table-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.table-card :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-top: 0;
+}
+.table-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.table-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.table-scroll {
+  flex: 1;
+  overflow: auto;
+}
 .pagination-bar {
-  margin-top: 16px;
+  flex-shrink: 0;
+  padding: 16px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
