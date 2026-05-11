@@ -1,12 +1,12 @@
 <template>
   <div class="product-list">
     <el-card shadow="never" class="search-bar">
-      <el-row :gutter="16" align="middle">
-        <el-col :span="8">
+      <el-row :gutter="12" align="middle">
+        <el-col :xs="24" :sm="24" :md="8">
           <el-input v-model="searchQuery" placeholder="搜索商品名称" clearable :prefix-icon="Search" @input="handleSearch" />
         </el-col>
-        <el-col :span="4">
-          <el-button type="primary" :icon="Search" @click="loadProducts">搜索</el-button>
+        <el-col :xs="24" :sm="24" :md="4">
+          <el-button type="primary" :icon="Search" @click="loadProducts" style="width: 100%">搜索</el-button>
         </el-col>
       </el-row>
     </el-card>
@@ -27,8 +27,8 @@
       <el-empty description="暂无商品" />
     </div>
 
-    <el-row v-else :gutter="20">
-      <el-col v-for="product in filteredProducts" :key="product.id" :xs="24" :sm="12" :md="8" :lg="6" style="margin-bottom: 20px">
+    <el-row v-else :gutter="16">
+      <el-col v-for="product in filteredProducts" :key="product.id" :xs="24" :sm="12" :md="8" :lg="6" style="margin-bottom: 16px">
         <el-card shadow="hover" class="product-card">
           <div class="product-img">
             <el-icon :size="48"><Goods /></el-icon>
@@ -82,8 +82,7 @@ const loadProducts = async () => {
   }
 }
 
-const handleSearch = () => {
-}
+const handleSearch = () => {}
 
 const buyProduct = async (product) => {
   const qty = quantities.value[product.id] || 1
@@ -111,7 +110,7 @@ onMounted(loadProducts)
 
 <style scoped>
 .search-bar {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .loading-container, .error-container {
   margin-top: 40px;
@@ -156,5 +155,13 @@ onMounted(loadProducts)
   display: flex;
   gap: 8px;
   justify-content: center;
+}
+
+@media (max-width: 767px) {
+  .search-bar { margin-bottom: 12px; }
+  .product-img { height: 60px; margin-bottom: 8px; }
+  .product-name { font-size: 14px; }
+  .product-price { font-size: 18px; }
+  .product-meta { margin-bottom: 8px; }
 }
 </style>

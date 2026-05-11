@@ -1,35 +1,11 @@
 <template>
   <div class="order-list">
-    <el-row :gutter="16" class="stats-row">
-      <el-col :span="6">
+    <el-row :gutter="12" class="stats-row">
+      <el-col :xs="12" :sm="12" :md="6" v-for="stat in statCards" :key="stat.label">
         <el-card shadow="never">
           <div class="stat-item">
-            <div class="stat-label">全部订单</div>
-            <div class="stat-value" style="color: #1890ff">{{ stats.total }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never">
-          <div class="stat-item">
-            <div class="stat-label">待处理</div>
-            <div class="stat-value" style="color: #faad14">{{ stats.pending }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never">
-          <div class="stat-item">
-            <div class="stat-label">已完成</div>
-            <div class="stat-value" style="color: #52c41a">{{ stats.completed }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never">
-          <div class="stat-item">
-            <div class="stat-label">已取消</div>
-            <div class="stat-value" style="color: #f5222d">{{ stats.cancelled }}</div>
+            <div class="stat-label">{{ stat.label }}</div>
+            <div class="stat-value" :style="{ color: stat.color }">{{ stat.value }}</div>
           </div>
         </el-card>
       </el-col>
@@ -44,7 +20,7 @@
             <el-tab-pane label="已完成" name="1" />
             <el-tab-pane label="已取消" name="2" />
           </el-tabs>
-          <el-button :icon="Refresh" @click="loadOrders">刷新</el-button>
+          <el-button :icon="Refresh" @click="loadOrders" :size="isMobile ? 'small' : 'default'">刷新</el-button>
         </div>
       </template>
 
@@ -69,37 +45,37 @@
 
         <template v-else>
           <div class="table-scroll">
-            <el-table :data="orders" style="width: 100%" @selection-change="onSelectionChange">
+            <el-table :data="orders" style="width: 100%" @selection-change="onSelectionChange" :size="isMobile ? 'small' : 'default'">
               <el-table-column type="selection" width="50" :selectable="(row) => row.status === 2" />
-              <el-table-column prop="orderNo" label="订单号" width="160" show-overflow-tooltip />
-              <el-table-column label="商品名称" min-width="150" show-overflow-tooltip>
+              <el-table-column prop="orderNo" label="订单号" min-width="150" show-overflow-tooltip />
+              <el-table-column label="商品名称" min-width="120" show-overflow-tooltip>
                 <template #default="{ row }">
                   {{ row.productNames || '-' }}
                 </template>
               </el-table-column>
-              <el-table-column label="商品数量" width="80">
+              <el-table-column label="商品数量" width="70">
                 <template #default="{ row }">
                   {{ row.totalQuantity ?? '-' }}
                 </template>
               </el-table-column>
-              <el-table-column prop="totalAmount" label="金额" width="120">
+              <el-table-column prop="totalAmount" label="金额" width="100">
                 <template #default="{ row }">
                   <span style="color: #f5222d; font-weight: bold">¥{{ row.totalAmount }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="status" label="状态" width="100">
+              <el-table-column prop="status" label="状态" width="80">
                 <template #default="{ row }">
                   <el-tag :type="statusType(row.status)" size="small">
                     {{ statusText(row.status) }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="createTime" label="下单时间" width="180">
+              <el-table-column prop="createTime" label="下单时间" min-width="140">
                 <template #default="{ row }">
                   {{ formatTime(row.createTime) }}
                 </template>
               </el-table-column>
-              <el-table-column label="操作" min-width="200">
+              <el-table-column label="操作" min-width="160" fixed="right">
                 <template #default="{ row }">
                   <el-button v-if="row.status === 0" type="success" size="small" @click="updateStatus(row.id, 1)">完成</el-button>
                   <el-button v-if="row.status === 0" type="warning" size="small" @click="updateStatus(row.id, 2)">取消</el-button>
@@ -109,9 +85,9 @@
                     </template>
                   </el-popconfirm>
                 </template>
-                </el-table-column>
-              </el-table>
-            </div>
+              </el-table-column>
+            </el-table>
+          </div>
 
           <div class="pagination-bar">
             <div v-if="selectedIds.length > 0">
@@ -129,7 +105,8 @@
               v-model:page-size="pageSize"
               :total="total"
               :page-sizes="[5, 10, 20, 50]"
-              layout="total, sizes, prev, pager, next, jumper"
+              :layout="paginationLayout"
+              small
               @size-change="loadOrders"
               @current-change="loadOrders"
             />
@@ -141,10 +118,24 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { orderApi } from '@/api'
 import { ElMessage } from 'element-plus'
+
+const isMobile = ref(window.innerWidth < 768)
+const handleResize = () => { isMobile.value = window.innerWidth < 768 }
+onMounted(() => window.addEventListener('resize', handleResize))
+onUnmounted(() => window.removeEventListener('resize', handleResize))
+
+const paginationLayout = computed(() => isMobile.value ? 'total, prev, pager, next' : 'total, sizes, prev, pager, next, jumper')
+
+const statCards = computed(() => [
+  { label: '全部订单', value: stats.value.total, color: '#1890ff' },
+  { label: '待处理', value: stats.value.pending, color: '#faad14' },
+  { label: '已完成', value: stats.value.completed, color: '#52c41a' },
+  { label: '已取消', value: stats.value.cancelled, color: '#f5222d' }
+])
 
 const orders = ref([])
 const selectedIds = ref([])
@@ -182,9 +173,7 @@ const loadStats = async () => {
     if (res.data.code === 200 && res.data.data) {
       stats.value = res.data.data
     }
-  } catch (e) {
-    // stats 加载失败不影响主列表
-  }
+  } catch (e) {}
 }
 
 const loadOrders = async () => {
@@ -256,17 +245,14 @@ onMounted(loadOrders)
 </script>
 
 <style scoped>
-.card-header {
+.order-list {
+  height: 100%;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.order-tabs {
-  flex: 1;
+  flex-direction: column;
 }
 .stats-row {
   flex-shrink: 0;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .stat-item {
   text-align: center;
@@ -280,11 +266,6 @@ onMounted(loadOrders)
 .stat-value {
   font-size: 22px;
   font-weight: bold;
-}
-.order-list {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 .table-card {
   flex: 1;
@@ -318,10 +299,11 @@ onMounted(loadOrders)
 }
 .pagination-bar {
   flex-shrink: 0;
-  padding: 16px 0 0;
+  padding: 12px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 :deep(.el-checkbox__inner) {
   background-color: #fff;
@@ -330,5 +312,10 @@ onMounted(loadOrders)
 :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
   background-color: #409eff;
   border-color: #409eff;
+}
+
+@media (max-width: 767px) {
+  .stat-value { font-size: 18px; }
+  .stat-label { font-size: 12px; }
 }
 </style>
