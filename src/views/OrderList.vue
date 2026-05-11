@@ -137,7 +137,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { orderApi } from '@/api'
 import { ElMessage } from 'element-plus'
@@ -184,6 +184,8 @@ const loadStats = async () => {
 }
 
 const loadOrders = async () => {
+  const mainEl = document.querySelector('.app-main')
+  const savedScroll = mainEl?.scrollTop || 0
   loading.value = true
   error.value = ''
   selectedIds.value = []
@@ -206,14 +208,21 @@ const loadOrders = async () => {
     error.value = e.response?.data?.message || e.message || '加载订单失败'
   } finally {
     loading.value = false
+    nextTick(() => mainEl?.scrollTo({ top: savedScroll }))
   }
 }
 
 const updateStatus = async (id, status) => {
   try {
     await orderApi.updateStatus(id, status)
+    const order = orders.value.find(o => o.id === id)
+    if (order) {
+      const old = order.status
+      if (old === 0 && status === 1) { stats.value.pending--; stats.value.completed++ }
+      else if (old === 0 && status === 2) { stats.value.pending--; stats.value.cancelled++ }
+      order.status = status
+    }
     ElMessage.success('操作成功')
-    loadOrders()
   } catch (e) {
     ElMessage.error(e.response?.data?.message || e.message || '操作失败')
   }
