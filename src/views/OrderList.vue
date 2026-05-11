@@ -47,35 +47,39 @@
           <div class="table-scroll">
             <el-table :data="orders" style="width: 100%" @selection-change="onSelectionChange" :size="isMobile ? 'small' : 'default'">
               <el-table-column type="selection" width="50" :selectable="(row) => row.status === 2" />
-              <el-table-column prop="orderNo" label="订单号" min-width="150" show-overflow-tooltip />
-              <el-table-column label="商品名称" min-width="120" show-overflow-tooltip>
+              <el-table-column label="订单号" min-width="80">
+                <template #default="{ row }">
+                  {{ isMobile ? row.orderNo.slice(0, 3) + '..' : row.orderNo }}
+                </template>
+              </el-table-column>
+              <el-table-column label="商品名称" min-width="70" show-overflow-tooltip>
                 <template #default="{ row }">
                   {{ row.productNames || '-' }}
                 </template>
               </el-table-column>
-              <el-table-column label="商品数量" width="70">
+              <el-table-column label="数量" width="50">
                 <template #default="{ row }">
                   {{ row.totalQuantity ?? '-' }}
                 </template>
               </el-table-column>
-              <el-table-column prop="totalAmount" label="金额" width="100">
+              <el-table-column prop="totalAmount" label="金额" width="70">
                 <template #default="{ row }">
                   <span style="color: #f5222d; font-weight: bold">¥{{ row.totalAmount }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="status" label="状态" width="80">
+              <el-table-column prop="status" label="状态" width="60">
                 <template #default="{ row }">
                   <el-tag :type="statusType(row.status)" size="small">
                     {{ statusText(row.status) }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="createTime" label="下单时间" min-width="140">
+              <el-table-column label="下单时间" min-width="70">
                 <template #default="{ row }">
-                  {{ formatTime(row.createTime) }}
+                  {{ isMobile ? shortTime(row.createTime) : formatTime(row.createTime) }}
                 </template>
               </el-table-column>
-              <el-table-column label="操作" min-width="160" fixed="right">
+              <el-table-column label="操作" min-width="100">
                 <template #default="{ row }">
                   <el-button v-if="row.status === 0" type="success" size="small" @click="updateStatus(row.id, 1)">完成</el-button>
                   <el-button v-if="row.status === 0" type="warning" size="small" @click="updateStatus(row.id, 2)">取消</el-button>
@@ -157,6 +161,7 @@ const statusType = (status) => {
 }
 
 const formatTime = (time) => time ? new Date(time).toLocaleString() : '-'
+const shortTime = (time) => time ? new Date(time).toLocaleString().slice(5, 16) : '-'
 
 const handleTabChange = () => {
   page.value = 1
@@ -317,5 +322,7 @@ onMounted(loadOrders)
 @media (max-width: 767px) {
   .stat-value { font-size: 18px; }
   .stat-label { font-size: 12px; }
+  .table-scroll :deep(.el-table .cell) { padding-left: 4px; padding-right: 4px; }
+  .table-scroll :deep(.el-table th.el-table__cell) { padding: 4px 0; }
 }
 </style>
