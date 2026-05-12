@@ -112,7 +112,7 @@
               :total="total"
               :page-sizes="[5, 10, 20, 50]"
               :layout="paginationLayout"
-              small
+              size="small"
               @size-change="loadOrders"
               @current-change="loadOrders"
             />
