@@ -101,6 +101,7 @@ const buyProduct = async (product) => {
   } catch (e) {
     if (e !== 'cancel') {
       ElMessage.error(e.response?.data?.message || e.message || '下单失败')
+      loadProducts()
     }
   }
 }
