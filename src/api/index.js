@@ -15,7 +15,14 @@ api.interceptors.request.use((config) => {
 })
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    if (res.data?.code !== 200) {
+      const error = new Error(res.data?.message || '请求失败')
+      error.response = res
+      return Promise.reject(error)
+    }
+    return res
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
