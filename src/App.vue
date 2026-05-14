@@ -5,7 +5,7 @@
       <template v-if="!isMobile">
         <div class="app-logo" :class="{ 'logo-collapsed': asideCollapsed }">
           <el-icon :size="24"><Management /></el-icon>
-          <span v-show="!asideCollapsed">订单管理系统</span>
+          <span v-show="!asideCollapsed">急速订单系统</span>
         </div>
         <el-menu :router="true" :default-active="route.path" :collapse="asideCollapsed" background-color="#001529" text-color="#fff" active-text-color="#409eff" collapse-transition>
           <el-menu-item index="/">
@@ -23,7 +23,7 @@
     <el-drawer v-model="drawerVisible" direction="ltr" size="220px" :with-header="false" v-if="isMobile">
       <div class="app-logo">
         <el-icon :size="24"><Management /></el-icon>
-        <span>订单管理系统</span>
+        <span>急速订单系统</span>
       </div>
       <el-menu :router="true" :default-active="route.path" background-color="#001529" text-color="#fff" active-text-color="#409eff" @select="drawerVisible = false">
         <el-menu-item index="/">

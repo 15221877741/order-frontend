@@ -1,7 +1,7 @@
 <template>
   <div class="login-wrapper">
     <el-card class="login-card" shadow="always">
-      <h2 class="login-title">订单管理系统</h2>
+      <h2 class="login-title">急速订单系统</h2>
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" size="large" @keyup.enter="handleLogin">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" placeholder="请输入用户名" :prefix-icon="User" />
