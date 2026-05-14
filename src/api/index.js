@@ -54,4 +54,10 @@ export const orderApi = {
   batchDelete: (ids) => api.post('/orders/batch-delete', { ids })
 }
 
+export const stressApi = {
+  run: (data) => api.post('/stress/run', data),
+  getTask: (taskId) => api.get(`/stress/tasks/${taskId}`),
+  resetStock: () => api.post('/stress/reset')
+}
+
 export default api

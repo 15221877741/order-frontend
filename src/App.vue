@@ -16,6 +16,10 @@
             <el-icon><List /></el-icon>
             <span>我的订单</span>
           </el-menu-item>
+          <el-menu-item index="/stress">
+            <el-icon><Lightning /></el-icon>
+            <span>压力测试</span>
+          </el-menu-item>
         </el-menu>
       </template>
     </el-aside>
@@ -34,6 +38,10 @@
           <el-icon><List /></el-icon>
           <span>我的订单</span>
         </el-menu-item>
+        <el-menu-item index="/stress">
+          <el-icon><Lightning /></el-icon>
+          <span>压力测试</span>
+        </el-menu-item>
       </el-menu>
     </el-drawer>
 
@@ -44,6 +52,7 @@
           <el-breadcrumb separator="/" class="breadcrumb">
             <el-breadcrumb-item :to="route.path === '/' ? '/' : '/'">首页</el-breadcrumb-item>
             <el-breadcrumb-item v-if="route.path === '/orders'">我的订单</el-breadcrumb-item>
+            <el-breadcrumb-item v-if="route.path === '/stress'">压力测试</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
         <div class="header-right">
@@ -73,7 +82,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Management, Goods, List, ArrowDown, SwitchButton, Fold, Expand } from '@element-plus/icons-vue'
+import { Management, Goods, List, ArrowDown, SwitchButton, Fold, Expand, Lightning } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store'
 import { ElMessageBox } from 'element-plus'
 
