@@ -126,7 +126,7 @@ const stats = computed(() => {
     { label: '总请求数', value: result.value.totalRequests, color: '#303133' },
     { label: '成功', value: result.value.successCount, color: '#67c23a' },
     { label: '失败', value: result.value.failCount, color: result.value.failCount > 0 ? '#f56c6c' : '#67c23a' },
-    { label: '总耗时 (ms)', value: result.value.totalTimeMs, color: '#409eff' },
+    { label: '总耗时 (s)', value: (result.value.totalTimeMs / 1000).toFixed(2), color: '#409eff' },
     { label: '平均响应 (ms)', value: result.value.avgResponseTimeMs, color: '#909399' },
     { label: 'TPS', value: result.value.tps, color: '#e6a23c' }
   ]
