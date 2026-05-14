@@ -65,6 +65,7 @@
           <el-icon style="vertical-align: middle; margin-right: 6px;"><CircleCheck /></el-icon>
           测试结果
         </span>
+        <el-button type="danger" :icon="Delete" size="small" text @click="clearResult">清除历史</el-button>
       </template>
       <el-row :gutter="16">
         <el-col :xs="12" :sm="6" v-for="stat in stats" :key="stat.label">
@@ -95,7 +96,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { Lightning, VideoPlay, Refresh, RefreshRight, Loading, CircleCheck, WarningFilled } from '@element-plus/icons-vue'
+import { Lightning, VideoPlay, Refresh, RefreshRight, Loading, CircleCheck, WarningFilled, Delete } from '@element-plus/icons-vue'
 import { productApi, stressApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -195,6 +196,7 @@ const pollTask = async (taskId) => {
       pollTimer = null
       running.value = false
       result.value = data
+      saveResult(data)
       if (data.status === 3) {
         ElMessage.error('压测任务执行异常')
       } else if (data.failCount > 0) {
@@ -209,6 +211,24 @@ const pollTask = async (taskId) => {
     running.value = false
     ElMessage.error('查询任务状态失败')
   }
+}
+
+const loadHistoryResult = () => {
+  const saved = localStorage.getItem('pressure_test_result')
+  if (saved) {
+    try {
+      result.value = JSON.parse(saved)
+    } catch { /* ignore */ }
+  }
+}
+
+const saveResult = (data) => {
+  localStorage.setItem('pressure_test_result', JSON.stringify(data))
+}
+
+const clearResult = () => {
+  localStorage.removeItem('pressure_test_result')
+  result.value = null
 }
 
 const resetStock = async () => {
@@ -226,7 +246,10 @@ const resetStock = async () => {
   }
 }
 
-onMounted(loadProducts)
+onMounted(() => {
+  loadProducts()
+  loadHistoryResult()
+})
 
 onUnmounted(() => {
   if (pollTimer) {
