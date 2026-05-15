@@ -73,7 +73,17 @@
         </div>
       </el-header>
       <el-main class="app-main">
-        <router-view />
+        <!--
+          keep-alive 缓存配置：
+          - include: 仅缓存指定名称的组件，提升性能减少内存占用
+          - StressTest: 压力测试页面，切换页面时保持进度条和状态
+          工作原理：组件切换时不被销毁，而是缓存到内存；再次切回时直接恢复
+        -->
+        <router-view v-slot="{ Component }">
+          <keep-alive include="StressTest">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </el-main>
     </el-container>
   </el-container>
