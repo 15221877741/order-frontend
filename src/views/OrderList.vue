@@ -5,7 +5,9 @@
         <el-card shadow="never">
           <div class="stat-item">
             <div class="stat-label">{{ stat.label }}</div>
-            <div class="stat-value" :style="{ color: stat.color }">{{ stat.value }}</div>
+            <div class="stat-value" :style="{ color: stat.color }">
+                <CountUp :end-val="stat.value" :duration="1" :key="stat.label" />
+              </div>
           </div>
         </el-card>
       </el-col>
@@ -124,8 +126,9 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
+import CountUp from 'vue-countup-v3'
 import { orderApi } from '@/api'
 import { ElMessage } from 'element-plus'
 
@@ -273,6 +276,10 @@ onMounted(loadOrders)
 .stat-value {
   font-size: 22px;
   font-weight: bold;
+  transition: transform 0.2s ease, color 0.3s ease;
+}
+.stat-value:hover {
+  transform: scale(1.08);
 }
 .table-card {
   flex: 1;
